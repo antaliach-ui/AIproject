@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#1e3a8a" />
+    <meta name="description" content="Spell words by looking at letters. The app says each letter and then reads your word." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Gaze Speller" />
+    <title>Gaze Speller</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <!-- 1. Language selection -->
+    <section id="screen-language" class="screen active" aria-labelledby="lang-title">
+      <header class="hero">
+        <img src="icons/icon.svg" alt="" class="hero-icon" width="64" height="64" />
+        <h1 id="lang-title">Gaze Speller</h1>
+        <p>Choose your language</p>
+      </header>
+
+      <div id="language-list" class="language-list" role="list"></div>
+
+      <fieldset class="mode-picker">
+        <legend>How will you choose letters?</legend>
+        <label><input type="radio" name="mode" value="eye" checked /> <span>👀 With my eyes (camera)</span></label>
+        <label><input type="radio" name="mode" value="pointer" /> <span>🖱️ Hover and hold (mouse or head pointer)</span></label>
+        <label><input type="radio" name="mode" value="touch" /> <span>👆 Tap letters</span></label>
+      </fieldset>
+      <p id="install-hint" class="small muted" hidden></p>
+    </section>
+
+    <!-- 2. Eye-tracking calibration -->
+    <section id="screen-calibrate" class="screen" aria-labelledby="cal-title">
+      <div id="cal-setup" class="cal-panel">
+        <h2 id="cal-title">Get ready</h2>
+        <ol class="steps">
+          <li>Hold the device steady at arm's length, at eye level.</li>
+          <li>Make sure your face is well lit and the box around your face turns <strong>green</strong>.</li>
+          <li>Press <strong>Start</strong>, then keep your head still and follow the dot with your eyes.</li>
+        </ol>
+        <p id="cal-status" class="small muted" role="status">Starting camera…</p>
+        <div class="row">
+          <button id="cal-start" class="btn primary" data-action="cal-start" disabled>Start</button>
+          <button id="cal-skip" class="btn" data-action="cal-skip" hidden>Use saved calibration</button>
+          <button class="btn ghost" data-action="use-touch">Tap instead</button>
+        </div>
+      </div>
+      <div id="cal-dot" class="cal-dot" hidden aria-hidden="true"></div>
+      <p id="cal-progress" class="cal-progress" hidden role="status"></p>
+    </section>
+
+    <!-- 3. Alphabet board -->
+    <section id="screen-board" class="screen" aria-labelledby="board-lang">
+      <header class="board-header">
+        <button class="icon-btn" data-action="back" aria-label="Change language">🌐</button>
+        <h2 id="board-lang">English</h2>
+        <button class="icon-btn" data-action="open-settings" aria-label="Settings">⚙️</button>
+      </header>
+
+      <div class="word-bar">
+        <div id="word" class="word" aria-live="polite" aria-label="Your word"></div>
+        <button class="key key-control" data-gaze data-action="delete" aria-label="Delete last letter">⌫</button>
+      </div>
+      <p id="board-prompt" class="prompt">Look at a letter to choose it</p>
+
+      <div id="letter-grid" class="letter-grid" role="group" aria-label="Alphabet"></div>
+
+      <footer class="board-footer">
+        <button class="btn ghost" data-action="clear">Clear</button>
+        <button id="read-btn" class="btn primary big key" data-gaze data-action="read">🔊 <span>Read my word</span></button>
+      </footer>
+    </section>
+
+    <!-- Confirm overlay -->
+    <div id="confirm" class="overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div class="overlay-card">
+        <p id="confirm-title" class="prompt">Is this your word?</p>
+        <p id="confirm-word" class="confirm-word"></p>
+        <div id="confirm-actions" class="confirm-actions">
+          <button class="key btn-yes" data-gaze data-action="confirm-yes" aria-label="Yes">✅<span>Yes</span></button>
+          <button class="key btn-again" data-gaze data-action="confirm-again" aria-label="Hear again">🔊<span>Again</span></button>
+          <button class="key btn-no" data-gaze data-action="confirm-no" aria-label="No, fix it">❌<span>No</span></button>
+        </div>
+        <div id="confirm-celebrate" class="celebrate" hidden>🎉</div>
+      </div>
+    </div>
+
+    <!-- Settings overlay -->
+    <div id="settings" class="overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="overlay-card settings-card">
+        <h2 id="settings-title">Settings</h2>
+        <label class="setting">
+          <span>Stare time to choose: <output id="dwell-out">1.5</output> s</span>
+          <input id="dwell" type="range" min="0.6" max="3" step="0.1" value="1.5" />
+        </label>
+        <label class="setting">
+          <span>Speaking speed: <output id="rate-out">0.9</output>×</span>
+          <input id="rate" type="range" min="0.5" max="1.5" step="0.1" value="0.9" />
+        </label>
+        <label class="setting check">
+          <input id="show-dot" type="checkbox" checked />
+          <span>Show where I'm looking</span>
+        </label>
+        <label class="setting check">
+          <input id="show-camera" type="checkbox" />
+          <span>Show camera preview</span>
+        </label>
+        <div class="row wrap">
+          <button class="btn" data-action="recalibrate">Recalibrate eyes</button>
+          <button class="btn" data-action="back">Change language</button>
+        </div>
+        <button class="btn primary key" data-gaze data-action="close-settings">Done</button>
+      </div>
+    </div>
+
+    <div id="letter-flash" class="letter-flash" aria-hidden="true"></div>
+    <div id="gaze-dot" class="gaze-dot" hidden aria-hidden="true"></div>
+    <div id="toast" class="toast" role="alert" hidden></div>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
